@@ -512,7 +512,7 @@ func (m *SupportBundleManager) phaseCollectPrometheusBundle() error {
 		return err
 	}
 
-	if err := os.WriteFile("/tmp/snapshots.gz", out.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s/prometheus-snapshots.gz", m.getWorkingDir()), out.Bytes(), 0644); err != nil {
 		return errors.Wrap(err, "failed to write snapshot tarball")
 	}
 
