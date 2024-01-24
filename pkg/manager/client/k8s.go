@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,11 +11,14 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/rancher/support-bundle-kit/pkg/utils"
 )
 
 type KubernetesClient struct {
 	Context   context.Context
 	clientSet *kubernetes.Clientset
+	config    *rest.Config
 }
 
 func NewKubernetesClient(ctx context.Context, config *rest.Config) (*KubernetesClient, error) {
@@ -25,7 +29,12 @@ func NewKubernetesClient(ctx context.Context, config *rest.Config) (*KubernetesC
 	return &KubernetesClient{
 		Context:   ctx,
 		clientSet: clientSet,
+		config:    config,
 	}, nil
+}
+
+func (k *KubernetesClient) PodExec(namespace, podName, containerName string, commands []string) (*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error) {
+	return utils.NewPodExec(*k.config, k.clientSet, namespace, podName, containerName).ExecCmd(commands)
 }
 
 func (k *KubernetesClient) GetNamespace(namespace string) (*corev1.Namespace, error) {

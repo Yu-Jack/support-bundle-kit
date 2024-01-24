@@ -2,8 +2,11 @@ package manager
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -118,6 +122,10 @@ func (m *SupportBundleManager) Run() error {
 		{
 			types.ManagerPhaseClusterBundle,
 			m.phaseCollectClusterBundle,
+		},
+		{
+			types.ManagerPhasePrometheusBundle,
+			m.phaseCollectPrometheusBundle,
 		},
 		{
 			types.ManagerPhaseNodeBundle,
@@ -468,6 +476,47 @@ func (m *SupportBundleManager) getTaintToleration() []v1.Toleration {
 		taintToleration = append(taintToleration, *toleration)
 	}
 	return taintToleration
+}
+
+func (m *SupportBundleManager) phaseCollectPrometheusBundle() error {
+	pods, err := m.k8s.GetPodsListByLabels("cattle-monitoring-system", "app.kubernetes.io/name=prometheus")
+	if apierrors.IsNotFound(err) {
+		logrus.Info("prometheus pods not found")
+		return nil
+	}
+
+	if err != nil {
+		return errors.Wrap(err, "failed to get prometheus pods")
+	}
+
+	// 1. Post /api/v1/admin/tsdb/snapshot to trigger snapshot
+	// 2. Exec into Pods to run tar zvcf /prometheus/snapshots
+	// 3. Copy this tarball back to this manager pods
+
+	url := "http://rancher-monitoring-prometheus.cattle-monitoring-system:9090/api/v1/admin/tsdb/snapshot"
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(`{}`)))
+	if err != nil {
+		return errors.Wrap(err, "failed to invoke snapshot api")
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	logrus.Info("Response: ", string(respBytes))
+
+	targetPod := pods.Items[0]
+	_, out, _, err := m.k8s.PodExec(targetPod.Namespace, targetPod.Name, "prometheus", []string{
+		"tar", "zvcf", "-", "-C", "/prometheus", "snapshots",
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile("/tmp/snapshots.gz", out.Bytes(), 0644); err != nil {
+		return errors.Wrap(err, "failed to write snapshot tarball")
+	}
+
+	return nil
 }
 
 func parseToleration(taintToleration string) (*v1.Toleration, error) {
