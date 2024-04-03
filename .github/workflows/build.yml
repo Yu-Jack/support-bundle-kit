@@ -15,6 +15,10 @@ jobs:
     container:
       image: rancher/dapper:v0.5.8
     steps:
+        # Git is not in Dapper container image. Add it manually for dirty check.
+      - name: Add Git
+        run: apk add -U git
+
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -43,6 +47,10 @@ jobs:
     container:
       image: rancher/dapper:v0.5.8
     steps:
+      # Git is not in Dapper container image. Add it manually for dirty check.
+      - name: Add Git
+        run: apk add -U git
+
       - name: Checkout code
         uses: actions/checkout@v2
 
