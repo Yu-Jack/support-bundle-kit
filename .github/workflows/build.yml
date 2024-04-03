@@ -33,7 +33,7 @@ jobs:
           dockerfile: package/Dockerfile
           build-args: |
             ARCH=amd64
-            VERSION=${{ github.ref }}-${{ github.sha:0:8 }}-head
+            VERSION=${{ github.ref }}-${{ github.sha }}-head
           push: true
           tags: jk82421/support-bundle-kit:${{ github.ref }}-head-amd64
 
@@ -60,7 +60,7 @@ jobs:
           dockerfile: package/Dockerfile
           build-args: |
             ARCH=arm64
-            VERSION=${{ github.ref }}-${{ github.sha:0:8 }}-head
+            VERSION=${{ github.ref }}-${{ github.sha }}-head
           push: true
           tags: jk82421/support-bundle-kit:${{ github.ref }}-head-arm64
 
