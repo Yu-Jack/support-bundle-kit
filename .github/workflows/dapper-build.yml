@@ -14,8 +14,15 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - linux/${{ inputs.arch }}
+          - linux/amd64
+          - linux/arm64
+    outputs:
+      output: ${{ steps.get_arch.outputs.arch }}
     steps:
+      - name: Get Arch
+        id: get_arch
+        run: echo ${{ matrix.platform }} | cut -c 7-
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,14 +42,14 @@ jobs:
       - name: Run dapper
         run: dapper ci
 
-      - name: Docker Publish Master ${{ inputs.arch }}
+      - name: Docker Publish Master $(echo ${{ matrix.platform }} | cut -c 7-)
         uses: docker/build-push-action@v2
         with:
           platforms: ${{ matrix.platform }}
           context: package
           dockerfile: package/Dockerfile
           build-args: |
-            ARCH=${{ inputs.arch }}
+            ARCH=$(echo ${{ matrix.platform }} | cut -c 7-)
             VERSION=test-${{ github.sha }}-head
           push: true
-          tags: jk82421/support-bundle-kit:test-head-${{ inputs.arch }}
+          tags: jk82421/support-bundle-kit:test-head-$(echo ${{ matrix.platform }} | cut -c 7-)

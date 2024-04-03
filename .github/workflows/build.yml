@@ -2,26 +2,54 @@ name: Build and Publish
 
 on:
   push:
-    branches:
-      - master
-      - release/v*
-    tags:
-      - '*'
-  pull_request:
 
 jobs:
 
-  amd64:
-    uses: ./.github/workflows/dapper-build.yml
-    secrets: inherit
-    with:
-      arch: "amd64"
+  dapper-build:
+    runs-on: ubuntu-latest
+    container:
+      image: rancher/dapper:v0.5.8
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - name: Get Arch
+        id: get_arch
+        run: echo ${{ matrix.platform }} | cut -c 7-
 
-  arm64:
-    uses: ./.github/workflows/dapper-build.yml
-    secrets: inherit
-    with:
-      arch: "arm64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+        # Git is not in Dapper container image. Add it manually for dirty check.
+      - name: Add Git
+        run: apk add -U git
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Run dapper
+        run: dapper ci
+
+      - name: Docker Publish Master $(echo ${{ matrix.platform }} | cut -c 7-)
+        uses: docker/build-push-action@v2
+        with:
+          platforms: ${{ matrix.platform }}
+          context: package
+          dockerfile: package/Dockerfile
+          build-args: |
+            ARCH=$(echo ${{ matrix.platform }} | cut -c 7-)
+            VERSION=${{ github.ref_name }}-${{ github.sha }}-head
+          push: true
+          tags: jk82421/support-bundle-kit:${{ github.ref_name }}-head-$(echo ${{ matrix.platform }} | cut -c 7-)
 
 #    runs-on: ubuntu-latest
 #    container:
@@ -88,8 +116,7 @@ jobs:
   manifest:
     runs-on: ubuntu-latest
     needs:
-      - amd64
-      - arm64
+      - dapper-build
 
     steps:
       - name: Checkout code
@@ -104,10 +131,10 @@ jobs:
       - name: Create Manifest arm64 and amd64
         run: |
           docker manifest create \ 
-          jk82421/support-bundle-kit:test-head \ 
-          rancher/support-bundle-kit:test-head-amd64 \ 
-          rancher/support-bundle-kit:test-head-arm64
+          jk82421/support-bundle-kit:${{ github.ref_name }}-head \ 
+          rancher/support-bundle-kit:${{ github.ref_name }}-head-amd64 \ 
+          rancher/support-bundle-kit:${{ github.ref_name }}-head-arm64
         working-directory: package
 
       - name: Push Manifest
-        run: docker manifest push jk82421/support-bundle-kit:test-head
+        run: docker manifest push jk82421/support-bundle-kit:${{ github.ref_name }}-head
