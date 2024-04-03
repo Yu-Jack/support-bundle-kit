@@ -13,12 +13,12 @@ jobs:
   amd64:
     uses: ./.github/workflows/dapper-build.yml
     with:
-      config-arch: "amd64"
+      arch: "amd64"
 
   arm64:
     uses: ./.github/workflows/dapper-build.yml
     with:
-      config-arch: "arm64"
+      arch: "arm64"
 
 #    runs-on: ubuntu-latest
 #    container:
