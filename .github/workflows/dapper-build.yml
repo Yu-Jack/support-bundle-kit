@@ -5,13 +5,15 @@ on:
         required: true
         type: string
 
-
 jobs:
   dapper-build:
     runs-on: ubuntu-latest
     container:
       image: rancher/dapper:v0.5.8
     steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
         # Git is not in Dapper container image. Add it manually for dirty check.
       - name: Add Git
         run: apk add -U git
@@ -37,4 +39,4 @@ jobs:
             ARCH=${{ inputs.arch }}
             VERSION=${{ github.ref }}-${{ github.sha }}-head
           push: true
-          tags: jk82421/support-bundle-kit:${{ github.ref }}-head-${{ inputs.arch }}
+          tags: jk82421/support-bundle-kit:${{ github.ref_name }}-head-${{ inputs.arch }}
