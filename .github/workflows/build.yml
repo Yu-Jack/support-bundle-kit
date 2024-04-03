@@ -12,11 +12,13 @@ on:
 jobs:
   amd64:
     uses: ./.github/workflows/dapper-build.yml
+    secrets: inherit
     with:
       arch: "amd64"
 
   arm64:
     uses: ./.github/workflows/dapper-build.yml
+    secrets: inherit
     with:
       arch: "arm64"
 
