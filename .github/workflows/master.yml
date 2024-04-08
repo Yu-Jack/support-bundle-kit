@@ -1,0 +1,15 @@
+name: Master Build and Publish
+
+on:
+  push:
+    branches:
+      - feat-*
+      - master
+      - release/v*
+
+jobs:
+  call-dapper-build:
+    uses: ./.github/workflows/template-build.yml
+    with:
+      config-path: ${{ github.ref_name }}-head
+    secrets: inherit
