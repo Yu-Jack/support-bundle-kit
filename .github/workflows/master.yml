@@ -11,5 +11,5 @@ jobs:
   call-dapper-build:
     uses: ./.github/workflows/template-build.yml
     with:
-      config-path: ${{ github.ref_name }}-head
+      release-tag-name: ${{ github.ref_name }}-head
     secrets: inherit
