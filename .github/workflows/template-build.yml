@@ -58,7 +58,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           file: package/Dockerfile
           push: true
-          tags: rancher/support-bundle-kit:${{ inputs.release-tag-name }}-${{ steps.get-arch.outputs.ARCH }}
+          tags: jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-${{ steps.get-arch.outputs.ARCH }}
           build-args: |
             ARCH=${{ steps.get-arch.outputs.ARCH }}
             VERSION=${{ github.ref_name }}-${{ github.sha }}-head
@@ -80,8 +80,8 @@ jobs:
 
       - name: Create Manifest arm64 and amd64
         run: >
-          docker manifest create rancher/support-bundle-kit:${{ inputs.release-tag-name }} rancher/support-bundle-kit:${{ inputs.release-tag-name }}-amd64 rancher/support-bundle-kit:${{ inputs.release-tag-name }}-arm64
+          docker manifest create jk82421/support-bundle-kit:${{ inputs.release-tag-name }} jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-amd64 jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-arm64
         working-directory: package
 
       - name: Push Manifest
-        run: docker manifest push rancher/support-bundle-kit:${{ inputs.release-tag-name }}
+        run: docker manifest push jk82421/support-bundle-kit:${{ inputs.release-tag-name }}
