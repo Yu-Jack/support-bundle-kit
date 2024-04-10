@@ -7,6 +7,6 @@ jobs:
   call-dapper-build:
     uses: ./.github/workflows/template-build.yml
     with:
-      release-tag-name: pull-${{ github.event.number }}
+      release-tag-name: pull-env-${{ github.event.number }}
       push: true
     secrets: inherit
