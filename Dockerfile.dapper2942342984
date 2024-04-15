@@ -1,0 +1,2 @@
+FROM support-bundle-kit:feat-5372-arm
+COPY . /go/src/github.com/rancher/support-bundle-kit/
