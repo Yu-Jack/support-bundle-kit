@@ -18,7 +18,7 @@ RUN curl -sSfL https://github.com/docker/buildx/releases/download/v0.13.1/buildx
 # -- for dapper
 ENV DAPPER_RUN_ARGS --privileged --network host -v /run/containerd/containerd.sock:/run/containerd/containerd.sock
 ENV GO111MODULE off
-ENV DAPPER_ENV REPO TAG DRONE_TAG
+ENV DAPPER_ENV REPO TAG DRONE_TAG PLATFORM
 ENV DAPPER_DOCKER_SOCKET true
 ENV DAPPER_SOURCE /go/src/github.com/rancher/support-bundle-kit/
 ENV DAPPER_OUTPUT ./bin ./dist

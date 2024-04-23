@@ -11,6 +11,12 @@ on:
 jobs:
   dapper-build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     permissions:
       contents: read
       id-token: write
@@ -24,32 +30,57 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Get Arch
+        id: get-arch
+        run: |
+          arch=$(echo ${{ matrix.platform }} | cut -c 7-)
+          echo "ARCH=$arch" >> "$GITHUB_OUTPUT"
+
       - name: Run dapper
         run: make ci
-
-      - name: Read some Secrets
-        uses: rancher-eio/read-vault-secrets@main
-        if: ${{ inputs.push == true }}
-        with:
-          secrets: |
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD
+        env:
+          PLATFORM: ${{ matrix.platform }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: ${{ inputs.push == true }}
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker Build
         uses: docker/build-push-action@v5
         with:
           provenance: false
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           file: package/Dockerfile
           push: ${{ inputs.push }}
-          tags: rancher/support-bundle-kit:${{ inputs.release-tag-name }}
-          build-args: |
-            VERSION=${{ github.ref_name }}-${{ github.sha }}-head
+          tags: jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-${{ steps.get-arch.outputs.ARCH }}
+
+  push-image:
+    needs: dapper-build
+    runs-on: ubuntu-latest
+    if: ${{ inputs.push == true }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+#      - name: Read some Secrets
+#        uses: rancher-eio/read-vault-secrets@main
+#        with:
+#          secrets: |
+#            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
+#            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create Manifest arm64 and amd64
+        run: >
+          docker manifest create jk82421/support-bundle-kit:${{ inputs.release-tag-name }} jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-amd64 jk82421/support-bundle-kit:${{ inputs.release-tag-name }}-arm64
+
+      - name: Push Manifest
+        run: docker manifest push jk82421/support-bundle-kit:${{ inputs.release-tag-name }}

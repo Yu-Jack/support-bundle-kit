@@ -11,8 +11,19 @@ fi
 LINKFLAGS="-X github.com/rancher/support-bundle-kit/cmd.AppVersion=$VERSION
            -X github.com/rancher/support-bundle-kit/cmd.GitCommit=$COMMIT"
 
-CGO_ENABLED=0 GOARCH=amd64 go build -ldflags "$LINKFLAGS $OTHER_LINKFLAGS" -o bin/support-bundle-kit-amd64
-CGO_ENABLED=0 GOARCH=arm64 go build -ldflags "$LINKFLAGS $OTHER_LINKFLAGS" -o bin/support-bundle-kit-arm64
+OS=$(echo "$PLATFORM" | cut -d'/' -f1)
+ARCH=$(echo "$PLATFORM" | cut -d'/' -f2)
+
+echo "PLATFORM: $PLATFORM"
+echo "OS: $OS"
+echo "ARCH: $ARCH"
+
+if [ -n "$OS" ] && [ -n "$ARCH" ]; then
+  CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -ldflags "$LINKFLAGS $OTHER_LINKFLAGS" -o bin/support-bundle-kit
+else
+  # default for local development build
+  CGO_ENABLED=0 go build -ldflags "$LINKFLAGS $OTHER_LINKFLAGS" -o bin/support-bundle-kit
+fi
 
 # non-go scripts
 cp hack/* bin
