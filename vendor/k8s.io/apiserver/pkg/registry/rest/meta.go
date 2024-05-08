@@ -34,7 +34,9 @@ func WipeObjectMetaSystemFields(meta metav1.Object) {
 
 // FillObjectMetaSystemFields populates fields that are managed by the system on ObjectMeta.
 func FillObjectMetaSystemFields(meta metav1.Object) {
-	meta.SetCreationTimestamp(metav1.Now())
+	if meta.GetCreationTimestamp().String() == "" {
+		meta.SetCreationTimestamp(metav1.Now())
+	}
 	meta.SetUID(uuid.NewUUID())
 }
 
