@@ -30,7 +30,7 @@ func RunEmbeddedEtcd(ctx context.Context, path string, certs *certs.CertInfo) (*
 	cfg := embed.NewConfig()
 
 	cfg.Logger = "zap"
-	cfg.LogLevel = "warn"
+	cfg.LogLevel = "error"
 
 	cfg.Dir = filepath.Join(path, "embedded")
 	cfg.AuthToken = ""
